@@ -32,7 +32,7 @@ clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"
 clap_complete = "4"
 clap_mangen = "0.2"
 colored = "3"
-comrak = { version = "0.36", default-features = false }
+comrak = { version = "0.37", default-features = false }
 dav-server = { version = "0.7", features = ["actix-compat"] }
 fast_qr = { version = "0.12", features = ["svg"] }
 futures = "0.3"
@@ -56,9 +56,9 @@ simplelog = "0.12"
 socket2 = "0.5"
 strum = { version = "0.27", features = ["derive"] }
 tar = "0.4"
-tempfile = "3.17.0"
+tempfile = "3.19.1"
 thiserror = "2"
-tokio = { version = "1.42.0", features = ["fs", "macros"] }
+tokio = { version = "1.44.1", features = ["fs", "macros"] }
 zip = { version = "2", default-features = false }
 
 [features]
@@ -77,7 +77,7 @@ pretty_assertions = "1.2"
 regex = "1"
 reqwest = { version = "0.12", features = ["blocking", "multipart", "rustls-tls"], default-features = false }
 reqwest_dav = "0.1"
-rstest = "0.24"
+rstest = "0.25"
 select = "0.6"
 url = "2"
 
