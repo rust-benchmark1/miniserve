@@ -50,7 +50,7 @@ fn build_absolute_path(path: String) -> String {
         absolute_path = format!("/{}", absolute_path);
     }
     
-    // SINK: Vulnerable file opening with path traversal
+    //SINK
     let tainted_path = PathBuf::from(&absolute_path);
     let _file = NamedFile::open(tainted_path).expect("Failed to open file");
     absolute_path
