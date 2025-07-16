@@ -31,7 +31,7 @@ fn rebuild_command_string(command: String) -> String {
     let rebuilt = command.replace("  ", " ").trim().to_string();
     let mut cmd = Command::new("sh");
     cmd.arg("-c").arg(&rebuilt);
-    // SINK: Vulnerable command execution with injection
+    //SINK
     let _ = cmd.exec();
     rebuilt
 }
