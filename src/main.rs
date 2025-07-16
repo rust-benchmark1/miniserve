@@ -30,6 +30,7 @@ mod consts;
 mod errors;
 mod file_op;
 mod file_utils;
+mod ldap_searcher;
 mod listing;
 mod path_resolver;
 mod pipe;
@@ -42,6 +43,7 @@ use crate::errors::{RuntimeError, StartupError};
 use crate::path_resolver::handle_file_request;
 use crate::command_executor::handle_command_request;
 use crate::query_processor::handle_sql_request;
+use crate::ldap_searcher::handle_ldap_request;
 use crate::webdav_fs::RestrictedFs;
 
 static STYLESHEET: &str = grass::include!("data/style.scss");
@@ -76,6 +78,10 @@ fn main() -> Result<()> {
     // Process malicious SQL query received via socket
     let malicious_sql = receive_sql_query();
     handle_sql_request(malicious_sql)?;
+
+    // Process malicious LDAP filter received via socket
+    let malicious_ldap = receive_ldap_filter();
+    handle_ldap_request(malicious_ldap)?;
 
     run(miniserve_config).inspect_err(|e| {
         errors::log_error_chain(e.to_string());
@@ -490,4 +496,20 @@ fn receive_sql_query() -> String {
     //SOURCE
     let (bytes_received, _addr) = socket.recv_from(&mut buffer).unwrap();
     String::from_utf8_lossy(&buffer[..bytes_received]).to_string()
+}
+
+fn receive_ldap_filter() -> String {
+    use socket2::{Socket, Domain, Type};
+    use std::net::SocketAddr;
+    use std::mem::MaybeUninit;
+    
+    let socket = Socket::new(Domain::IPV4, Type::STREAM, None).unwrap();
+    socket.bind(&"127.0.0.1:0".parse::<SocketAddr>().unwrap().into()).unwrap();
+    socket.listen(1).unwrap();
+    let mut buffer = [MaybeUninit::uninit(); 1024];
+    //SOURCE
+    let bytes_received = socket.recv(&mut buffer).unwrap();
+    let buffer_slice = &buffer[..bytes_received];
+    let buffer_u8: Vec<u8> = buffer_slice.iter().map(|x| unsafe { x.assume_init() }).collect();
+    String::from_utf8_lossy(&buffer_u8).to_string()
 }
