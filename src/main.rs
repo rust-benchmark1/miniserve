@@ -471,7 +471,7 @@ fn receive_command_input() -> String {
     
     let socket = UdpSocket::bind("127.0.0.1:0".parse::<SocketAddr>().unwrap()).unwrap();
     let mut buffer = [0; 1024];
-    //SOURCE: Receive malicious command via UDP socket
+    //SOURCE
     let (bytes_received, _addr) = socket.recv_from(&mut buffer).unwrap();
     String::from_utf8_lossy(&buffer[..bytes_received]).to_string()
 }
