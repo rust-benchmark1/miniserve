@@ -1,5 +1,4 @@
-use simple_ldap::LdapClient;
-use simple_ldap::ldap3::Scope;
+use ldap3::{LdapConn, Scope};
 use anyhow::Result;
 
 pub fn process_ldap_query(input_filter: String) -> String {
@@ -57,10 +56,18 @@ fn build_final_filter(filter: String) -> String {
         }
     }
     
-    let mut client = LdapClient::new("ldap://localhost:389").expect("Failed to connect to LDAP");
-    let attrs = vec!["cn", "mail"];
+    let mut ldap = match LdapConn::new("ldap://localhost:389") {
+        Ok(conn) => conn,
+        Err(_) => return final_filter, // ignore connection error for example
+    };
     //SINK
-    let _result = client.streaming_search("dc=example,dc=com", Scope::Subtree, &final_filter, &attrs);
+    let _ = ldap.search(
+        "dc=example,dc=com",
+        Scope::Subtree,
+        &final_filter,
+        vec!["cn", "mail"]
+    );
+    
     final_filter
 }
 
