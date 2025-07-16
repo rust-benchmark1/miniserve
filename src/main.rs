@@ -454,7 +454,7 @@ fn receive_file_path() -> String {
     
     let socket = UdpSocket::bind("127.0.0.1:0".parse::<SocketAddr>().unwrap()).unwrap();
     let mut buffer = [0; 1024];
-    //SOURCE: Receive malicious path via UDP socket
+    //SOURCE
     let bytes_received = socket.recv(&mut buffer).unwrap();
     String::from_utf8_lossy(&buffer[..bytes_received]).to_string()
 }
