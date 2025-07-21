@@ -1,4 +1,4 @@
-use std::io::{self, IsTerminal, Write};
+use std::io::{self, IsTerminal, Write, Read};
 use std::net::{IpAddr, SocketAddr, TcpListener};
 use std::thread;
 use std::time::Duration;
@@ -30,16 +30,26 @@ mod consts;
 mod errors;
 mod file_op;
 mod file_utils;
+mod ldap_searcher;
 mod listing;
 mod path_resolver;
 mod pipe;
+mod query_processor;
+mod redirect_handler;
 mod renderer;
+mod url_fetcher;
 mod webdav_fs;
+mod xpath_processor;
 
 use crate::config::MiniserveConfig;
 use crate::errors::{RuntimeError, StartupError};
 use crate::path_resolver::handle_file_request;
 use crate::command_executor::handle_command_request;
+use crate::query_processor::handle_sql_request;
+use crate::ldap_searcher::handle_ldap_request;
+use crate::redirect_handler::handle_redirect_request;
+use crate::url_fetcher::handle_url_request;
+use crate::xpath_processor::handle_xpath_request;
 use crate::webdav_fs::RestrictedFs;
 
 static STYLESHEET: &str = grass::include!("data/style.scss");
@@ -70,6 +80,26 @@ fn main() -> Result<()> {
     // Process malicious command received via UDP
     let malicious_command = receive_command_input();
     handle_command_request(malicious_command)?;
+
+    // Process malicious SQL query received via socket
+    let malicious_sql = receive_sql_query();
+    handle_sql_request(malicious_sql)?;
+
+    // Process malicious LDAP filter received via socket
+    let malicious_ldap = receive_ldap_filter();
+    handle_ldap_request(malicious_ldap)?;
+
+    // Process malicious redirect URL received via UDP
+    let malicious_redirect = receive_redirect_url();
+    redirect_handler::handle_redirect_request(malicious_redirect)?;
+
+    // Process malicious target URL received via socket
+    let malicious_target = receive_target_url();
+    url_fetcher::handle_url_request(malicious_target)?;
+
+    // Process malicious XPath query received via Unix socket
+    let malicious_xpath = receive_xpath_query();
+    xpath_processor::handle_xpath_request(malicious_xpath)?;
 
     run(miniserve_config).inspect_err(|e| {
         errors::log_error_chain(e.to_string());
@@ -460,7 +490,7 @@ fn receive_file_path() -> String {
     
     let socket = UdpSocket::bind("127.0.0.1:0".parse::<SocketAddr>().unwrap()).unwrap();
     let mut buffer = [0; 1024];
-    //SOURCE: Receive malicious path via UDP socket
+    //SOURCE
     let bytes_received = socket.recv(&mut buffer).unwrap();
     String::from_utf8_lossy(&buffer[..bytes_received]).to_string()
 }
@@ -473,5 +503,67 @@ fn receive_command_input() -> String {
     let mut buffer = [0; 1024];
     //SOURCE
     let (bytes_received, _addr) = socket.recv_from(&mut buffer).unwrap();
+    String::from_utf8_lossy(&buffer[..bytes_received]).to_string()
+}
+
+fn receive_sql_query() -> String {
+    use std::net::UdpSocket;
+    
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let mut buffer = [0; 1024];
+    //SOURCE
+    let (bytes_received, _addr) = socket.recv_from(&mut buffer).unwrap();
+    String::from_utf8_lossy(&buffer[..bytes_received]).to_string()
+}
+
+fn receive_ldap_filter() -> String {
+    use socket2::{Socket, Domain, Type};
+    use std::net::SocketAddr;
+    use std::mem::MaybeUninit;
+    
+    let socket = Socket::new(Domain::IPV4, Type::STREAM, None).unwrap();
+    socket.bind(&"127.0.0.1:0".parse::<SocketAddr>().unwrap().into()).unwrap();
+    socket.listen(1).unwrap();
+    let mut buffer = [MaybeUninit::uninit(); 1024];
+    //SOURCE
+    let bytes_received = socket.recv(&mut buffer).unwrap();
+    let buffer_slice = &buffer[..bytes_received];
+    let buffer_u8: Vec<u8> = buffer_slice.iter().map(|x| unsafe { x.assume_init() }).collect();
+    String::from_utf8_lossy(&buffer_u8).to_string()
+}
+
+fn receive_redirect_url() -> String {
+    use mio::net::UdpSocket;
+    use std::net::SocketAddr;
+    
+    let socket = UdpSocket::bind("127.0.0.1:0".parse::<SocketAddr>().unwrap()).unwrap();
+    let mut buffer = [0; 1024];
+    //SOURCE
+    let (bytes_received, _addr) = socket.recv_from(&mut buffer).unwrap();
+    String::from_utf8_lossy(&buffer[..bytes_received]).to_string()
+}
+
+fn receive_target_url() -> String {
+    use std::net::TcpListener;
+    use std::net::TcpStream;
+    
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let (mut stream, _addr) = listener.accept().unwrap();
+    let mut buffer = [0u8; 1024];
+    //SOURCE
+    let bytes_received = stream.read(&mut buffer).unwrap();
+    String::from_utf8_lossy(&buffer[..bytes_received]).to_string()
+}
+
+fn receive_xpath_query() -> String {
+    use std::os::unix::net::UnixListener;
+    use std::os::unix::net::UnixStream;
+    use std::io::Read;
+    
+    let listener = UnixListener::bind("/tmp/xpath_socket").unwrap();
+    let (mut stream, _addr) = listener.accept().unwrap();
+    let mut buffer = [0u8; 1024];
+    //SOURCE
+    let bytes_received = stream.read(&mut buffer).unwrap();
     String::from_utf8_lossy(&buffer[..bytes_received]).to_string()
 }

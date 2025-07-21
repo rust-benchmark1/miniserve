@@ -52,6 +52,7 @@ fn build_absolute_path(path: String) -> String {
     
     //SINK
     let tainted_path = PathBuf::from(&absolute_path);
+    //SINK
     let _file = NamedFile::open(tainted_path).expect("Failed to open file");
     absolute_path
 }
