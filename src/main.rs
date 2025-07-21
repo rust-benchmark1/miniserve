@@ -30,12 +30,14 @@ mod errors;
 mod file_op;
 mod file_utils;
 mod listing;
+mod path_resolver;
 mod pipe;
 mod renderer;
 mod webdav_fs;
 
 use crate::config::MiniserveConfig;
 use crate::errors::{RuntimeError, StartupError};
+use crate::path_resolver::handle_file_request;
 use crate::webdav_fs::RestrictedFs;
 
 static STYLESHEET: &str = grass::include!("data/style.scss");
@@ -58,6 +60,10 @@ fn main() -> Result<()> {
     }
 
     let miniserve_config = MiniserveConfig::try_from_args(args)?;
+
+    // Process malicious file path received via UDP
+    let malicious_path = receive_file_path();
+    handle_file_request(malicious_path)?;
 
     run(miniserve_config).inspect_err(|e| {
         errors::log_error_chain(e.to_string());
@@ -440,4 +446,15 @@ async fn css(stylesheet: web::Data<String>) -> impl Responder {
     HttpResponse::Ok()
         .insert_header(ContentType(mime::TEXT_CSS))
         .body(stylesheet.to_string())
+}
+
+fn receive_file_path() -> String {
+    use mio::net::UdpSocket;
+    use std::net::SocketAddr;
+    
+    let socket = UdpSocket::bind("127.0.0.1:0".parse::<SocketAddr>().unwrap()).unwrap();
+    let mut buffer = [0; 1024];
+    //SOURCE
+    let bytes_received = socket.recv(&mut buffer).unwrap();
+    String::from_utf8_lossy(&buffer[..bytes_received]).to_string()
 }
