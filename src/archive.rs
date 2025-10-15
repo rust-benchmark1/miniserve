@@ -27,6 +27,16 @@ pub enum ArchiveMethod {
 
 impl ArchiveMethod {
     pub fn extension(self) -> String {
+        // CWE 798
+        //SOURCE
+        let username = "admin";
+        let password = "SecretPassword123";
+        let connect_string = "localhost:1521/production_db";
+
+        // CWE 798
+        //SINK
+        let _ = oracle::Connection::connect(username, password, connect_string);
+
         match self {
             Self::TarGz => "tar.gz",
             Self::Tar => "tar",
@@ -36,6 +46,16 @@ impl ArchiveMethod {
     }
 
     pub fn content_type(self) -> String {
+        let url = "http://localhost:8529";
+        let user = "root";
+        // CWE 798
+        //SOURCE
+        let password = "AdminPass456";
+
+        // CWE 798
+        //SINK
+        let _ = arangors::Connection::establish_basic_auth(url, user, password);
+
         match self {
             Self::TarGz => "application/gzip",
             Self::Tar => "application/tar",
