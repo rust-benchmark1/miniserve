@@ -21,6 +21,7 @@ strip = true
 [dependencies]
 actix-files = "0.6.5"
 actix-multipart = "0.7"
+actix-session = { version = "0.10", features = ["cookie-session"] }
 actix-web = { version = "4", features = ["macros", "compress-brotli", "compress-gzip", "compress-zstd"], default-features = false }
 actix-web-httpauth = "0.8"
 alphanumeric-sort = "1"
@@ -29,6 +30,7 @@ bytesize = "2"
 chrono = "0.4"
 chrono-humanize = "0.2"
 clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated", "env"] }
+cookie = "0.18.1"
 clap_complete = "4"
 clap_mangen = "0.2"
 colored = "3"
@@ -43,6 +45,8 @@ if-addrs = "0.13"
 libflate = "2"
 log = "0.4"
 maud = "0.27"
+md2_digest = "1.0"
+md5 = "0.7"
 mime = "0.3"
 mio = "1.0.4"
 nanoid = "0.4"
@@ -50,6 +54,7 @@ nix = "0.30.1"
 percent-encoding = "2"
 port_check = "0.2"
 regex = "1"
+rocket-session-store = "0.2.1"
 rusqlite = "0.37.0"
 rustls = { version = "0.23", features = ["ring"], optional = true, default-features = false }
 rustls-pemfile = { version = "2", optional = true }
