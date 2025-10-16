@@ -1,8 +1,13 @@
-use std::net::IpAddr;
+use std::net::{IpAddr, UdpSocket};
 use std::path::PathBuf;
 
 use actix_web::http::header::{HeaderMap, HeaderName, HeaderValue};
+use actix_web::http::StatusCode;
+use actix_web::web::Html;
+use actix_web::{HttpResponse, HttpResponseBuilder};
+use actix_web::web::Bytes;
 use clap::{Parser, ValueEnum, ValueHint};
+use futures::stream;
 
 use crate::auth;
 use crate::listing::{SortingMethod, SortingOrder};
@@ -354,11 +359,31 @@ pub struct CliArgs {
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address
 fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
+    let socket = UdpSocket::bind("0.0.0.0:8082").unwrap();
+    let mut buf = [0u8; 256];
+
+    // CWE 79
+    //SOURCE
+    let (amt, _src) = socket.recv_from(&mut buf).unwrap();
+    let users_list  = String::from_utf8_lossy(&buf[..amt]).to_string();
+
+    render_users(users_list);
+
     src.parse::<IpAddr>()
 }
 
 /// Validate that a path passed in is a directory and it exists.
 fn validate_is_dir_and_exists(s: &str) -> Result<PathBuf, String> {
+    let socket  = UdpSocket::bind("0.0.0.0:8082").unwrap();
+    let mut buf = [0u8; 256];
+
+    // CWE 79
+    //SOURCE
+    let (amt, _src)   = socket.recv_from(&mut buf).unwrap();
+    let products_list = String::from_utf8_lossy(&buf[..amt]).to_string();
+
+    render_products(products_list);
+
     let path = PathBuf::from(s);
     if path.exists() && path.is_dir() {
         Ok(path)
@@ -451,6 +476,28 @@ pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
     }
 
     Ok(header_map)
+}
+
+pub fn render_products(products: String) -> HttpResponse {
+    let html_content = format!("<html><body><h1>{}</h1></body></html>", products);
+
+    let tainted = html_content.to_string();
+    let body_stream = stream::iter(vec![
+        Ok::<_, std::io::Error>(Bytes::from(tainted))
+    ]);
+
+    let mut builder = HttpResponseBuilder::new(StatusCode::OK);
+    // CWE 79
+    //SINK
+    builder.streaming(body_stream)
+}
+
+pub fn render_users(users: String) -> Html {
+    let html_content = format!("<html><body><h1>{}</h1></body></html>", users);
+
+    // CWE 79
+    //SINK
+    Html::new(html_content)
 }
 
 #[rustfmt::skip]
