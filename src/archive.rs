@@ -29,9 +29,9 @@ pub enum ArchiveMethod {
 
 impl ArchiveMethod {
     pub fn extension(self) -> String {
+        let username = "admin";
         // CWE 798
         //SOURCE
-        let username = "admin";
         let password = "SecretPassword123";
         let connect_string = "localhost:1521/production_db";
 
