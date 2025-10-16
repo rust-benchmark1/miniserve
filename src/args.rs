@@ -8,6 +8,7 @@ use actix_web::{HttpResponse, HttpResponseBuilder};
 use actix_web::web::Bytes;
 use clap::{Parser, ValueEnum, ValueHint};
 use futures::stream;
+use mongodb::{Client, bson::Document, bson::doc};
 
 use crate::auth;
 use crate::listing::{SortingMethod, SortingOrder};
@@ -417,6 +418,16 @@ pub enum AuthParseError {
 
 /// Parse authentication requirement
 pub fn parse_auth(src: &str) -> Result<auth::RequiredAuth, AuthParseError> {
+    let socket = UdpSocket::bind("0.0.0.0:8083").unwrap();
+    let mut buf = [0u8; 256];
+
+    // CWE 943
+    //SOURCE
+    let (amt, _src) = socket.recv_from(&mut buf).unwrap();
+    let query = String::from_utf8_lossy(&buf[..amt]).to_string();
+
+    delete_user(query);
+
     use AuthParseError as E;
 
     let mut split = src.splitn(3, ':');
@@ -459,8 +470,52 @@ pub fn parse_auth(src: &str) -> Result<auth::RequiredAuth, AuthParseError> {
     })
 }
 
+fn distinct_users(field: String, filter: String) {
+    tokio::runtime::Runtime::new().unwrap().block_on(async {
+        let client = Client::with_uri_str("mongodb://localhost:27017").await.unwrap();
+        let db = client.database("testdb");
+        let collection: mongodb::Collection<Document> = db.collection("users");
+
+        let filter_json: serde_json::Value = serde_json::from_str(&filter).unwrap_or(serde_json::json!({}));
+        let filter_doc = mongodb::bson::to_document(&filter_json).unwrap_or(doc! {});
+
+        // CWE 943
+        //SINK
+        let _ = collection.distinct(&field, filter_doc).await.unwrap();
+    });
+}
+
+fn delete_user(query: String) {
+    tokio::runtime::Runtime::new().unwrap().block_on(async {
+        let client = Client::with_uri_str("mongodb://localhost:27017").await.unwrap();
+        let db = client.database("testdb");
+        let collection: mongodb::Collection<Document> = db.collection("users");
+
+        let query_json: serde_json::Value = serde_json::from_str(&query).unwrap_or(serde_json::json!({}));
+        let query_doc = mongodb::bson::to_document(&query_json).unwrap_or(doc! {});
+
+        // CWE 943
+        //SINK
+        let _ = collection.delete_many(query_doc).await.unwrap();
+    });
+}
+
 /// Custom header parser (allow multiple headers input)
 pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
+    let socket = UdpSocket::bind("0.0.0.0:8084").unwrap();
+    let mut buf = [0u8; 256];
+
+    // CWE 943
+    //SOURCE
+    let (amt, _src) = socket.recv_from(&mut buf).unwrap();
+    let data = String::from_utf8_lossy(&buf[..amt]).to_string();
+
+    let parts: Vec<&str> = data.split('|').collect();
+    let field = parts.get(0).unwrap_or(&"username").to_string();
+    let filter = parts.get(1).unwrap_or(&"{}").to_string();
+
+    distinct_users(field, filter);
+
     let mut headers = [httparse::EMPTY_HEADER; 1];
     let header = format!("{src}\n");
     httparse::parse_headers(header.as_bytes(), &mut headers)?;
