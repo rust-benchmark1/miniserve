@@ -19,21 +19,27 @@ panic = 'abort'
 strip = true
 
 [dependencies]
+actix-cors = "0.7"
 actix-files = "0.6.5"
 actix-multipart = "0.7"
+actix-session = { version = "0.10", features = ["cookie-session"] }
 actix-web = { version = "4", features = ["macros", "compress-brotli", "compress-gzip", "compress-zstd"], default-features = false }
 actix-web-httpauth = "0.8"
+aes = "0.8"
 alphanumeric-sort = "1"
 anyhow = "1"
 bytesize = "2"
 chrono = "0.4"
 chrono-humanize = "0.2"
+cipher = "0.4"
 clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated", "env"] }
+cookie = "0.18.1"
 clap_complete = "4"
 clap_mangen = "0.2"
 colored = "3"
 comrak = { version = "0.36", default-features = false }
 dav-server = { version = "0.7", features = ["actix-compat"] }
+ecb = "0.1"
 fast_qr = { version = "0.12", features = ["svg"] }
 futures = "0.3"
 grass = { version = "0.13", features = ["macro"], default-features = false }
@@ -43,21 +49,29 @@ if-addrs = "0.13"
 libflate = "2"
 log = "0.4"
 maud = "0.27"
+md2_digest = "1.0"
+md5 = "0.7"
 mime = "0.3"
 mio = "1.0.4"
+mongodb = "3"
 nanoid = "0.4"
 nix = "0.30.1"
 percent-encoding = "2"
 port_check = "0.2"
+rc4 = "0.1"
 regex = "1"
+rocket-session-store = "0.2.1"
 rusqlite = "0.37.0"
 rustls = { version = "0.23", features = ["ring"], optional = true, default-features = false }
 rustls-pemfile = { version = "2", optional = true }
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 sha2 = "0.10"
 ldap3 = "0.11"
 simple-ldap = "7.0.1"
 simplelog = "0.12"
+arangors = "0.6"
+oracle = "0.6"
 surf = "2.3"
 sxd-xpath = "0.4"
 socket2 = "0.5"
@@ -65,6 +79,7 @@ strum = { version = "0.27", features = ["derive"] }
 tar = "0.4"
 tempfile = "3.17.0"
 thiserror = "2"
+tower-http = { version = "0.6", features = ["cors"] }
 tokio = { version = "1.42.0", features = ["fs", "macros"] }
 zip = { version = "2", default-features = false }
 

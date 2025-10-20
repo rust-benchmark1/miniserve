@@ -2,11 +2,13 @@ use std::fs::File;
 use std::io::{Cursor, Read, Write};
 use std::path::{Path, PathBuf};
 
+use actix_cors::Cors;
 use libflate::gzip::Encoder;
 use serde::Deserialize;
 use strum::{Display, EnumIter, EnumString};
 use tar::Builder;
 use zip::{write, ZipWriter};
+use tower_http::cors::CorsLayer;
 
 use crate::errors::RuntimeError;
 
@@ -27,6 +29,16 @@ pub enum ArchiveMethod {
 
 impl ArchiveMethod {
     pub fn extension(self) -> String {
+        let username = "admin";
+        // CWE 798
+        //SOURCE
+        let password = "SecretPassword123";
+        let connect_string = "localhost:1521/production_db";
+
+        // CWE 798
+        //SINK
+        let _ = oracle::Connection::connect(username, password, connect_string);
+
         match self {
             Self::TarGz => "tar.gz",
             Self::Tar => "tar",
@@ -36,6 +48,16 @@ impl ArchiveMethod {
     }
 
     pub fn content_type(self) -> String {
+        let url = "http://localhost:8529";
+        let user = "root";
+        // CWE 798
+        //SOURCE
+        let password = "AdminPass456";
+
+        // CWE 798
+        //SINK
+        let _ = arangors::Connection::establish_basic_auth(url, user, password);
+
         match self {
             Self::TarGz => "application/gzip",
             Self::Tar => "application/tar",
@@ -290,6 +312,10 @@ fn zip_data<W>(src_dir: &Path, skip_symlinks: bool, mut out: W) -> Result<(), Ru
 where
     W: std::io::Write,
 {
+    // CWE 942
+    //SINK
+    let _ = CorsLayer::permissive();
+
     let mut data = Vec::new();
     let memory_file = Cursor::new(&mut data);
     create_zip_from_directory(memory_file, src_dir, skip_symlinks).map_err(|e| {
@@ -308,7 +334,11 @@ where
 fn zip_dir<W>(dir: &Path, skip_symlinks: bool, out: W) -> Result<(), RuntimeError>
 where
     W: std::io::Write,
-{
+{   
+    // CWE 942
+    //SINK
+    let _ = actix_cors::Cors::default().allow_any_origin();
+
     let inner_folder = dir.file_name().ok_or_else(|| {
         RuntimeError::InvalidPathError("Directory name terminates in \"..\"".to_string())
     })?;
