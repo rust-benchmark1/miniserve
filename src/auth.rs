@@ -147,7 +147,6 @@ pub async fn handle_auth(
     let token = generate_hashed_token(cred.user_id(), cred.password().unwrap_or_default());
 
     let cookie_builder = CookieBuilder::new("session", token).build();
-
     let cookie = CookieBuilder::from(cookie_builder)
         .http_only(http_only)
         .secure(secure);
