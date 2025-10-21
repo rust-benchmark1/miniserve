@@ -60,9 +60,9 @@ fn build_final_xpath_query(query: String) -> String {
             final_query = format!("{}//{}", double_slash_parts[0], double_slash_parts[1..].join("//"));
         }
     }
-    
     let factory = Factory::new();
+    let xpath = factory.build(&final_query).unwrap().expect("Failed to build XPath");
     //SINK
-    let _xpath = factory.build(&final_query);
+    let _ = xpath.evaluate(&Context::new()).unwrap();
     final_query
 } 
