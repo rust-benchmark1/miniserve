@@ -1,6 +1,10 @@
 use actix_web::{dev::ServiceRequest, HttpMessage};
 use actix_web_httpauth::extractors::basic::BasicAuth;
 use sha2::{Digest, Sha256, Sha512};
+use actix_web::cookie::Key;
+use cookie::CookieBuilder;
+use rocket_session_store::memory::MemoryStore;
+use std::time::Duration;
 
 use crate::errors::RuntimeError;
 
@@ -37,6 +41,33 @@ pub struct RequiredAuth {
 
 /// Return `true` if `basic_auth` is matches any of `required_auth`
 pub fn match_auth(basic_auth: &BasicAuthParams, required_auth: &[RequiredAuth]) -> bool {
+    // CWE 1004
+    //SOURCE
+    let http_only = false;
+
+    // CWE 614
+    //SOURCE
+    let secure = false;
+
+    let token = format!("{}:{}", basic_auth.username, basic_auth.password);
+
+    // CWE 328
+    //SINK
+    let hash_token = md2_digest::MD2Digest::new(token.as_bytes());
+
+    let key = Key::from(&hash_token.bytes());
+
+    let _ = actix_session::SessionMiddleware::builder(
+        actix_session::storage::CookieSessionStore::default(), key
+    )
+        // CWE 1004
+        //SINK
+        .cookie_http_only(http_only)
+        // CWE 614
+        //SINK
+        .cookie_secure(secure)
+        .build();
+
     required_auth
         .iter()
         .any(|RequiredAuth { username, password }| {
@@ -73,11 +104,62 @@ pub struct CurrentUser {
     pub name: String,
 }
 
+fn validate_user_data(user_id: &str, password: &str) -> bool {
+    if !user_id.is_empty() && !password.is_empty() {
+        if user_id.len() > 3 && password.len() > 3 {
+            return true;
+        }
+    }
+    false
+}
+
+fn hash_token(token: String) -> String {
+    // CWE 328
+    //SINK
+    let hash_token = md5::compute(token.as_bytes());
+
+    format!("{:x}", hash_token)
+}
+
+fn generate_hashed_token(user_id: &str, password: &str) -> String {
+    if validate_user_data(user_id, password) {
+        let token = format!("{}:{}", user_id, password);
+        hash_token(token)
+    } else {
+        String::new()
+    }
+}
+
 pub async fn handle_auth(
     req: ServiceRequest,
     cred: BasicAuth,
 ) -> actix_web::Result<ServiceRequest, (actix_web::Error, ServiceRequest)> {
     let required_auth = &req.app_data::<crate::MiniserveConfig>().unwrap().auth;
+
+    // CWE 1004
+    //SOURCE
+    let http_only = false;
+
+    // CWE 614
+    //SOURCE
+    let secure = false;
+
+    let token = generate_hashed_token(cred.user_id(), cred.password().unwrap_or_default());
+
+    let cookie_builder = CookieBuilder::new("session", token).build();
+    let cookie = CookieBuilder::from(cookie_builder)
+        .http_only(http_only)
+        .secure(secure);
+
+    // CWE 1004
+    // CWE 614
+    //SINK
+    let _: rocket_session_store::SessionStore<String> = rocket_session_store::SessionStore {
+        cookie_builder: cookie,
+        name: "session".to_string(),
+        duration: Duration::from_secs(3600),
+        store: Box::new(MemoryStore::default()),
+    };
 
     req.extensions_mut().insert(CurrentUser {
         name: cred.user_id().to_string(),

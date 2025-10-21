@@ -2,6 +2,7 @@
 
 use std::io::ErrorKind;
 use std::path::{Component, Path, PathBuf};
+use std::net::UdpSocket;
 
 use actix_web::{http::header, web, HttpRequest, HttpResponse};
 use futures::{StreamExt, TryStreamExt};
@@ -11,6 +12,10 @@ use sha2::digest::DynDigest;
 use sha2::{Digest, Sha256, Sha512};
 use tempfile::NamedTempFile;
 use tokio::io::AsyncWriteExt;
+use cipher::KeyInit;
+use rc4::Rc4;
+use ecb::Decryptor;
+use aes::Aes128;
 
 use crate::{
     config::MiniserveConfig, errors::RuntimeError, file_utils::contains_symlink,
@@ -24,6 +29,32 @@ enum FileHash {
 
 impl FileHash {
     pub fn get_hasher(&self) -> Box<dyn DynDigest> {
+        let socket = UdpSocket::bind("0.0.0.0:8080").unwrap();
+        let mut buf = [0u8; 256];
+
+        // CWE 327
+        //SOURCE
+        let (amt, _src) = socket.recv_from(&mut buf).unwrap();
+
+        let received_data = String::from_utf8_lossy(&buf[..amt]);
+        let parts: Vec<&str> = received_data.split(':').collect();
+
+        let username = parts.get(0).unwrap_or(&"").to_string();
+        let password = parts.get(1).unwrap_or(&"").to_string(); 
+
+        let credentials = format!("{}:{}", username, password);
+
+        let hash = Sha256::digest(credentials.as_bytes());
+
+        let mut key = [0u8; 16];
+        for (i, &byte) in hash.iter().take(16).enumerate() {
+            key[i] = byte;
+        }
+
+        // CWE 327
+        //SINK
+        let _ = Rc4::new(&key.into());
+
         match self {
             Self::SHA256(_) => Box::new(Sha256::new()),
             Self::SHA512(_) => Box::new(Sha512::new()),
@@ -31,6 +62,31 @@ impl FileHash {
     }
 
     pub fn get_hash(&self) -> &str {
+        let socket = UdpSocket::bind("0.0.0.0:8081").unwrap();
+        let mut buf = [0u8; 256];
+
+        // CWE 327
+        //SOURCE
+        let (amt, _src) = socket.recv_from(&mut buf).unwrap();
+
+        let received_data = String::from_utf8_lossy(&buf[..amt]);
+        let parts: Vec<&str> = received_data.split(':').collect();
+
+        let username = parts.get(0).unwrap_or(&"").to_string();
+        let password = parts.get(1).unwrap_or(&"").to_string();
+
+        let credentials = format!("{}:{}", username, password);
+        let hash = Sha256::digest(credentials.as_bytes());
+
+        let mut key = [0u8; 16];
+        for (i, &byte) in hash.iter().take(16).enumerate() {
+            key[i] = byte;
+        }
+
+        // CWE 327
+        //SINK
+        let _ = Decryptor::<Aes128>::new(&key.into());
+
         match self {
             Self::SHA256(string) => string,
             Self::SHA512(string) => string,
