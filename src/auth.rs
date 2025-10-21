@@ -149,13 +149,12 @@ pub async fn handle_auth(
     let cookie_builder = CookieBuilder::new("session", token).build();
 
     let cookie = CookieBuilder::from(cookie_builder)
-        // CWE 1004
-        //SINK
         .http_only(http_only)
-        // CWE 614
-        //SINK
         .secure(secure);
 
+    // CWE 1004
+    // CWE 614
+    //SINK
     let _: rocket_session_store::SessionStore<String> = rocket_session_store::SessionStore {
         cookie_builder: cookie,
         name: "session".to_string(),
