@@ -1,5 +1,6 @@
-use sxd_xpath::{Factory, Context};
 use anyhow::Result;
+use sxd_document::parser;
+use sxd_xpath::{Context, Factory};
 
 pub fn handle_xpath_request(xpath_query: String) -> Result<()> {
     let _processed_query = process_xpath_query(xpath_query);
@@ -60,9 +61,17 @@ fn build_final_xpath_query(query: String) -> String {
             final_query = format!("{}//{}", double_slash_parts[0], double_slash_parts[1..].join("//"));
         }
     }
+
+    let xml = "<root><item>test</item></root>";
+    let package = parser::parse(xml).unwrap();
+    let document = package.as_document();
+
     let factory = Factory::new();
+    let context = Context::new();
     let xpath = factory.build(&final_query).unwrap().expect("Failed to build XPath");
+
+    // CWE-643
     //SINK
-    let _ = xpath.evaluate(&Context::new()).unwrap();
+    let _ = xpath.evaluate(&context, document.root()).unwrap();
     final_query
 } 
