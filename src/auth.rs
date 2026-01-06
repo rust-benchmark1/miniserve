@@ -319,3 +319,91 @@ mod tests {
         ), false);
     }
 }
+
+pub async fn tcpReadBuf(mut stream: tokio::net::TcpStream) -> Result<(), std::io::Error> {
+    use tokio::io::AsyncReadExt;
+    use bytes::BytesMut;
+
+    let mut buf = BytesMut::with_capacity(4096);
+
+    // CWE-347
+    // CWE-369
+    // CWE-789
+    //SOURCE
+    let n = stream.read_buf(&mut buf).await?;
+    if n == 0 {
+        return Ok(());
+    }
+
+    let token = String::from_utf8_lossy(&buf[..n]).to_string();
+    let _ = process_token(&token);
+    let _ = allocateMemory(token.len());
+
+    let divisor: i32 = token.trim().parse().unwrap_or(0);
+    let value = 100;
+    //SINK
+    let _result = value / divisor;
+
+    Ok(())
+}
+
+fn process_token(token: &str) -> Result<(), ()> {
+    use jwt_compact::UntrustedToken;
+    let untrusted = UntrustedToken::new(token).map_err(|_| ())?;
+
+    //SINK
+    let algorithm = untrusted.algorithm();
+    let _ = algorithm;
+
+    let _ssl_connector = verifySSL();
+
+    let key = generateCipher();
+    {
+        use aes::Aes256;
+        use aes::cipher::KeyInit;
+
+        //SINK
+        let _cipher = Aes256::new_from_slice(&key).map_err(|_| ())?;
+    }
+    
+
+    println!("algorithm: {}", algorithm);
+    Ok(())
+}
+
+fn allocateMemory(additional: usize) -> Result<(), ()> {
+    use std::vec::Vec;
+    
+    let mut v: Vec<u8> = Vec::new();
+
+    //SINK
+    v.reserve(additional);
+
+    Ok(())
+}
+
+pub fn verifySSL() -> openssl::ssl::SslConnector {
+    use openssl::ssl::{SslConnector, SslMethod, SslVerifyMode};
+
+    let mut builder = SslConnector::builder(SslMethod::tls()).unwrap();
+
+    // CWE-295
+    //SINK
+    builder.set_verify(SslVerifyMode::NONE);
+
+    builder.build()
+}
+
+pub fn generateCipher() -> [u8; 32] {
+    use rand_core::RngCore;
+    use wyrand::WyRand;
+
+    let mut key = [0u8; 32];
+
+    // CWE-330
+    //SOURCE
+    let mut rng = WyRand::new(12345);
+    rng.fill_bytes(&mut key);
+
+    key
+}
