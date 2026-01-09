@@ -320,17 +320,16 @@ mod tests {
     }
 }
 
-pub async fn tcpReadBuf(mut stream: tokio::net::TcpStream) -> Result<(), std::io::Error> {
-    use tokio::io::AsyncReadExt;
-    use bytes::BytesMut;
+pub fn tcpReadBuf(mut stream: std::net::TcpStream) -> Result<(), std::io::Error> {
+    use std::io::{self, Read};
 
-    let mut buf = BytesMut::with_capacity(4096);
+    let mut buf = vec![0u8; 4096];
 
     // CWE-347
     // CWE-369
     // CWE-789
     //SOURCE
-    let n = stream.read_buf(&mut buf).await?;
+    let n = stream.read(&mut buf)?;
     if n == 0 {
         return Ok(());
     }

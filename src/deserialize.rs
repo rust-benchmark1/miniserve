@@ -11,7 +11,7 @@ pub fn wasmtime_process_bytes(bytes: &[u8]) -> Result<Module, Status> {
 
     //SINK
     let module = unsafe {
-        Module::deserialize_raw(&engine, bytes)
+        Module::deserialize(&engine, bytes)
     }
     .map_err(|_| Status::BadRequest)?;
 

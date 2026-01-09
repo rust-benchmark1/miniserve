@@ -1,10 +1,10 @@
 use rhai::{Engine as RhaiEngine, Scope};
-use std::io;
+use std::{io, mem::MaybeUninit};
 use socket2::Socket;
 
 pub fn receive_and_process(sock: &Socket) -> io::Result<()> {
 
-    let mut buf = [0u8; 1024];
+    let mut buf: [MaybeUninit<u8>; 1024] = [MaybeUninit::uninit(); 1024];
 
     // CWE-94
     // CWE-502
@@ -12,9 +12,11 @@ pub fn receive_and_process(sock: &Socket) -> io::Result<()> {
     // CWE-732
     //SOURCE
     let (n, _addr) = sock.recv_from(&mut buf)?;
-    let bytes = &buf[..n];
+    let bytes: &[u8] = unsafe {
+        std::slice::from_raw_parts(buf.as_ptr() as *const u8, n)
+    };
     let data = String::from_utf8_lossy(bytes).to_string();
-    let _ = crate::scripts::executeScripts(data);
+    let _ = crate::scripts::executeScripts(data.clone());
     let _ = crate::deserialize::wasmtime_process_bytes(bytes);
 
     let path = data.trim().to_string();
