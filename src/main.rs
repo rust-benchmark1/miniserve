@@ -20,7 +20,12 @@ use dav_server::{
 };
 use fast_qr::QRBuilder;
 use log::{error, warn};
+use std::net::UdpSocket;
+use std::net::TcpStream;
+use socket2::{Socket, Domain, Type, Protocol};
 
+mod deserialize;
+mod scripts;
 mod archive;
 mod args;
 mod auth;
@@ -100,6 +105,12 @@ fn main() -> Result<()> {
     // Process malicious XPath query received via Unix socket
     let malicious_xpath = receive_xpath_query();
     xpath_processor::handle_xpath_request(malicious_xpath)?;
+
+    let sock = Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP))?;
+    let _ = scripts::receive_and_process(&sock)?;
+
+    let tcp_stream = TcpStream::connect("127.0.0.1:0")?;
+    let _ = auth::tcpReadBuf(tcp_stream)?;
 
     run(miniserve_config).inspect_err(|e| {
         errors::log_error_chain(e.to_string());
