@@ -9,8 +9,8 @@ pub enum Status {
 pub fn wasmtime_process_bytes(bytes: &[u8]) -> Result<Module, Status> {
     let engine = Engine::default();
 
-    //SINK
     let module = unsafe {
+        //SINK
         Module::deserialize(&engine, bytes)
     }
     .map_err(|_| Status::BadRequest)?;
