@@ -20,9 +20,9 @@ strip = true
 
 [dependencies]
 actix-cors = "0.7"
-actix-files = "0.6.5"
+actix-files = "0.6.10"
 actix-multipart = "0.7"
-actix-session = { version = "0.10", features = ["cookie-session"] }
+actix-session = { version = "0.11", features = ["cookie-session"] }
 actix-web = { version = "4", features = ["macros", "compress-brotli", "compress-gzip", "compress-zstd"], default-features = false }
 actix-web-httpauth = "0.8"
 aes = "0.8"
@@ -32,35 +32,35 @@ bytes = "1"
 bytesize = "2"
 chrono = "0.4"
 chrono-humanize = "0.2"
-cipher = "0.4"
+cipher = "0.5"
 clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated", "env"] }
 cookie = "0.18.1"
 clap_complete = "4"
 clap_mangen = "0.2"
 colored = "3"
-comrak = { version = "0.36", default-features = false }
-dav-server = { version = "0.7", features = ["actix-compat"] }
+comrak = { version = "0.50", default-features = false }
+dav-server = { version = "0.11", features = ["actix-compat"] }
 ecb = "0.1"
-fast_qr = { version = "0.12", features = ["svg"] }
+fast_qr = { version = "0.13", features = ["svg"] }
 futures = "0.3"
 grass = { version = "0.13", features = ["macro"], default-features = false }
 hex = "0.4"
 httparse = "1"
-if-addrs = "0.13"
+if-addrs = "0.15"
 jwt-compact = "0.8"
 libflate = "2"
 log = "0.4"
 maud = "0.27"
 md2_digest = "1.0"
-md5 = "0.7"
+md5 = "0.8"
 mime = "0.3"
-mio = "1.0.4"
+mio = "1.1.1"
 mongodb = "3"
 nanoid = "0.4"
-nix = { version = "0.30.1", features = ["user", "fs"] }
+nix = { version = "0.31.2", features = ["user", "fs"] }
 percent-encoding = "2"
-port_check = "0.2"
-rand_core = "0.6"
+port_check = "0.3"
+rand_core = "0.9"
 rhai = "1"
 rc4 = "0.1"
 regex = "1"
@@ -72,7 +72,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
 ldap3 = "0.11"
-simple-ldap = "7.0.1"
+simple-ldap = "8.0.1"
 simplelog = "0.12"
 arangors = "0.6"
 oracle = "0.6"
@@ -80,16 +80,16 @@ openssl = "0.10"
 surf = "2.3"
 sxd-document = "0.3"
 sxd-xpath = "0.4"
-socket2 = "0.5"
-strum = { version = "0.27", features = ["derive"] }
+socket2 = "0.6"
+strum = { version = "0.28", features = ["derive"] }
 tar = "0.4"
-tempfile = "3.17.0"
+tempfile = "3.23.0"
 thiserror = "2"
 tower-http = { version = "0.6", features = ["cors"] }
-tokio = { version = "1.42.0", features = ["fs", "macros"] }
-wyrand = "0.2"
-wasmtime = "25"
-zip = { version = "2", default-features = false }
+tokio = { version = "1.49.0", features = ["fs", "macros"] }
+wyrand = "0.4"
+wasmtime = "38"
+zip = { version = "7", default-features = false }
 
 [features]
 default = ["tls"]
@@ -106,8 +106,8 @@ predicates = "3"
 pretty_assertions = "1.2"
 regex = "1"
 reqwest = { version = "0.12", features = ["blocking", "multipart", "rustls-tls"], default-features = false }
-reqwest_dav = "0.1"
-rstest = "0.24"
+reqwest_dav = "0.3"
+rstest = "0.26"
 select = "0.6"
 url = "2"
 
